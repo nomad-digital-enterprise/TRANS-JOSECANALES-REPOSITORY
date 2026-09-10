@@ -992,6 +992,91 @@
     object-position:center 30%;  /* Centra en el camión y el cartel */
     filter:contrast(1.08) brightness(0.96); /* Realza el B&N */
   }
+
+  /* ═══ MODAL SERVICIOS ═══ */
+  .modal-overlay{
+    display:none; position:fixed; inset:0; z-index:400;
+    background:rgba(20,28,55,0.78); backdrop-filter:blur(4px);
+    align-items:center; justify-content:center; padding:20px;
+  }
+  .modal-overlay.open{ display:flex; }
+
+  .modal-box{
+    background:#fff; border-radius:14px; width:100%; max-width:600px;
+    max-height:90vh; overflow-y:auto;
+    box-shadow:0 24px 64px rgba(20,28,55,0.40);
+    animation:modalIn .22s ease;
+  }
+  @keyframes modalIn{
+    from{ opacity:0; transform:translateY(14px) scale(.97); }
+    to  { opacity:1; transform:translateY(0)    scale(1);   }
+  }
+
+  /* Cabecera */
+  .modal-header{
+    background:var(--corp-dark); padding:26px 28px 22px;
+    display:flex; align-items:flex-start; justify-content:space-between; gap:14px;
+    border-radius:14px 14px 0 0;
+  }
+  .modal-header-left{ display:flex; align-items:center; gap:14px; }
+  .modal-icon{
+    width:46px; height:46px; background:var(--corp-blue); border-radius:8px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .modal-icon svg{ width:22px; height:22px; stroke:white; fill:none; stroke-width:2; }
+  .modal-header h3{ font-size:19px; color:white; margin-bottom:3px; font-weight:700; }
+  .modal-header .modal-sub{ font-size:13px; color:var(--text-pale); }
+  .modal-close{
+    background:rgba(255,255,255,0.13); border:none; color:white; cursor:pointer;
+    width:32px; height:32px; border-radius:50%; font-size:17px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; transition:background .15s;
+  }
+  .modal-close:hover{ background:rgba(255,255,255,0.24); }
+
+  /* Cuerpo */
+  .modal-body{ padding:26px 28px; }
+  .modal-body > p{ font-size:15px; color:#374151; line-height:1.72; margin-bottom:22px; }
+
+  .modal-features{
+    display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:22px;
+  }
+  .modal-feat{
+    display:flex; align-items:flex-start; gap:10px; padding:12px 14px;
+    background:var(--bg-alt); border-radius:8px; border-left:3px solid var(--corp-blue);
+  }
+  .modal-feat svg{ width:15px; height:15px; stroke:var(--corp-blue); flex-shrink:0; margin-top:2px; fill:none; }
+  .modal-feat span{ font-size:13px; color:#1a2035; font-weight:500; line-height:1.45; }
+
+  .modal-cta{
+    display:flex; align-items:center; justify-content:space-between;
+    padding-top:18px; border-top:1px solid var(--line-light); gap:12px; flex-wrap:wrap;
+  }
+  .modal-cta p{ font-size:13px; color:var(--text-mid); margin:0; }
+  .modal-btn{
+    background:var(--corp-blue); color:white; border:none; border-radius:5px;
+    padding:11px 22px; font-size:14px; font-weight:600; cursor:pointer;
+    white-space:nowrap; transition:background .15s;
+  }
+  .modal-btn:hover{ background:var(--corp-blue-dark); }
+
+  /* Tarjeta clickable */
+  .service-card{ cursor:pointer; }
+
+  /* Responsive modal */
+  @media(max-width:640px){
+    .modal-overlay{ padding:12px; align-items:flex-end; }
+    .modal-box{ border-radius:14px 14px 0 0; max-height:92vh; }
+    .modal-header{ padding:20px 18px 16px; border-radius:14px 14px 0 0; }
+    .modal-body{ padding:18px; }
+    .modal-features{ grid-template-columns:1fr; }
+    .modal-cta{ flex-direction:column; align-items:stretch; }
+    .modal-btn{ text-align:center; }
+  }
+  @media(max-width:380px){
+    .modal-header h3{ font-size:17px; }
+    .modal-body > p{ font-size:14px; }
+    .modal-feat span{ font-size:12.5px; }
+  }
 </style>
 </head>
 <body>
@@ -1712,6 +1797,31 @@
   <span class="lightbox-caption" id="lbCaption"></span>
 </div>
 
+
+<!-- MODAL SERVICIOS -->
+<div class="modal-overlay" id="svcModal" role="dialog" aria-modal="true">
+  <div class="modal-box" id="svcBox">
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <div class="modal-icon" id="svcIcon"></div>
+        <div>
+          <h3 id="svcTitle"></h3>
+          <p class="modal-sub" id="svcSub"></p>
+        </div>
+      </div>
+      <button class="modal-close" id="svcClose" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="modal-body">
+      <p id="svcDesc"></p>
+      <div class="modal-features" id="svcFeats"></div>
+      <div class="modal-cta">
+        <p>¿Hablamos sobre tu envío?</p>
+        <button class="modal-btn" id="svcCTA">Solicitar información</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
   const navToggle = document.getElementById('navToggle');
   const navLinks = document.getElementById('navLinks');
@@ -1842,6 +1952,80 @@
       ]
     }
   };
+
+  // ── MODAL SERVICIOS ───────────────────────────────────────────────────
+  (function() {
+    const overlay  = document.getElementById('svcModal');
+    const title    = document.getElementById('svcTitle');
+    const sub      = document.getElementById('svcSub');
+    const icon     = document.getElementById('svcIcon');
+    const desc     = document.getElementById('svcDesc');
+    const feats    = document.getElementById('svcFeats');
+    const closeBtn = document.getElementById('svcClose');
+    const ctaBtn   = document.getElementById('svcCTA');
+
+    if (!overlay) return;
+
+    function openModal(key) {
+      const s = SERVICES[key];
+      if (!s) return;
+      title.textContent = s.title;
+      sub.textContent   = s.sub;
+      icon.innerHTML    = s.icon;
+      desc.textContent  = s.desc;
+      feats.innerHTML   = s.features.map(([t, d]) =>
+        `<div class="modal-feat">
+          <svg viewBox="0 0 24 24" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+          <span><strong>${t}:</strong> ${d}</span>
+        </div>`
+      ).join('');
+      overlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+      overlay.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    // Tarjeta completa clickable (excluyendo clicks en el enlace)
+    document.querySelectorAll('.service-card').forEach(card => {
+      const key = card.querySelector('[data-service]')?.dataset.service;
+      if (!key) return;
+      card.addEventListener('click', (e) => {
+        // No interferir si el usuario hace clic en un enlace externo
+        if (e.target.tagName === 'A' && e.target.href !== '#' && !e.target.dataset.service) return;
+        e.preventDefault();
+        openModal(key);
+      });
+      // Touch en móvil
+      card.addEventListener('touchend', (e) => {
+        if (e.target.tagName === 'A' && e.target.href !== '#' && !e.target.dataset.service) return;
+        e.preventDefault();
+        openModal(key);
+      }, { passive: false });
+    });
+
+    // Enlace "Ver detalles" también abre el modal
+    document.querySelectorAll('[data-service]').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openModal(link.dataset.service);
+      });
+    });
+
+    // Cerrar
+    closeBtn.addEventListener('click', closeModal);
+    ctaBtn.addEventListener('click', () => {
+      closeModal();
+      setTimeout(() => {
+        document.getElementById('contacto-form')?.scrollIntoView({ behavior: 'smooth' });
+      }, 180);
+    });
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+  })();
 
   // ── MAPA RADIAL INTERACTIVO ───────────────────────────────────────────
   (function() {
